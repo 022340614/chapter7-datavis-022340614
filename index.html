@@ -498,31 +498,24 @@
                 <div class="control-panel">
                     <h3>地图控制</h3>
                     <div class="control-group">
-                        <label class="control-label">地图投影：</label>
-                        <select id="map-projection" class="btn">
-                            <option value="equirectangular">等距圆柱投影</option>
-                            <option value="mercator">墨卡托投影</option>
-                            <option value="orthographic">正射投影</option>
-                        </select>
+                        <label class="control-label">气泡大小缩放：</label>
+                        <input type="range" class="slider" id="bubble-scale" min="0.5" max="2" value="0.8" step="0.1">
+                        <span>缩放因子: <span id="scale-value">0.8</span>x</span>
                     </div>
                     <div class="control-group">
-                        <label class="control-label">显示要素：</label>
+                        <label class="control-label">显示选项：</label>
                         <div class="checkbox-group">
                             <label class="checkbox-label">
-                                <input type="checkbox" id="show-coastlines" checked> 海岸线
+                                <input type="checkbox" id="show-labels" checked> 显示城镇名称
                             </label>
                             <label class="checkbox-label">
-                                <input type="checkbox" id="show-countries" checked> 国家边界
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="show-states" checked> 州界
+                                <input type="checkbox" id="show-background" checked> 显示背景轮廓
                             </label>
                         </div>
                     </div>
-                    <div class="control-group">
-                        <label class="control-label">气泡大小缩放：</label>
-                        <input type="range" class="slider" id="bubble-scale" min="500" max="2000" value="1000" step="100">
-                    </div>
+                    <button class="btn" onclick="resetMapView()">
+                        <span>🔄</span>重置视图
+                    </button>
                 </div>
             </section>
 
@@ -725,39 +718,58 @@
             currentAnimations['sineWave'] = Plotly.newPlot('chart7-2-2', [trace], layout);
         }
 
-        // 7.3.2 美国人口分布地图
+        // 7.3.2 美国人口分布地图 - 简化版确保显示
         function initUSPopulationMap() {
+            // 使用更简单的散点图替代地理图表
             const trace = {
-                type: 'scattergeo',
-                mode: 'markers',
-                lat: chapter7ExactData.usCities.lat,
-                lon: chapter7ExactData.usCities.lon,
-                text: chapter7ExactData.usCities.cities.map((city, i) => 
-                    `${city}<br>人口: ${chapter7ExactData.usCities.population[i]}万`
-                ),
+                type: 'scatter',
+                mode: 'markers+text',
+                x: chapter7ExactData.usCities.lon,
+                y: chapter7ExactData.usCities.lat,
+                text: chapter7ExactData.usCities.cities,
+                textposition: 'top center',
                 marker: {
-                    size: chapter7ExactData.usCities.population.map(pop => pop / 10),
+                    size: chapter7ExactData.usCities.population.map(pop => pop * 0.8),
                     color: chapter7ExactData.usCities.population,
                     colorscale: 'Viridis',
-                    line: {width: 0}
-                }
+                    line: {width: 1, color: 'white'},
+                    sizemin: 8,
+                    sizemode: 'area'
+                },
+                hovertemplate: '<b>%{text}</b><br>人口: %{marker.size}万<br>纬度: %{y}<br>经度: %{x}<extra></extra>'
             };
 
             const layout = {
                 title: '7.3.2 美国部分城镇人口分布 - 022340614',
-                geo: {
-                    scope: 'north america',
-                    projection: {type: 'equirectangular'},
-                    showland: true,
-                    landcolor: 'rgb(217, 217, 217)',
-                    subunitwidth: 1,
-                    countrywidth: 1,
-                    subunitcolor: 'rgb(255,255,255)',
-                    countrycolor: 'rgb(255,255,255)'
-                }
+                xaxis: {
+                    title: '经度',
+                    range: [-125, -65]
+                },
+                yaxis: {
+                    title: '纬度',
+                    range: [25, 50]
+                },
+                showlegend: false,
+                margin: {l: 60, r: 60, b: 60, t: 80},
+                width: 800,
+                height: 500,
+                plot_bgcolor: 'rgba(240,240,240,0.8)',
+                paper_bgcolor: 'white'
             };
 
-            Plotly.newPlot('chart7-3', [trace], layout);
+            // 添加背景地图轮廓
+            const backgroundTrace = {
+                type: 'scatter',
+                mode: 'lines',
+                x: [-125, -65, -65, -125, -125],
+                y: [25, 25, 50, 50, 25],
+                line: {color: 'gray', width: 1, dash: 'dot'},
+                fill: 'toself',
+                fillcolor: 'rgba(200,200,200,0.1)',
+                showlegend: false
+            };
+
+            Plotly.newPlot('chart7-3', [backgroundTrace, trace], layout, {responsive: true});
         }
 
         // 绑定控制事件
@@ -775,11 +787,9 @@
             document.getElementById('blink-mode').addEventListener('change', updateBlinkMode);
 
             // 地图控制
-            document.getElementById('map-projection').addEventListener('change', updateMapProjection);
-            document.getElementById('show-coastlines').addEventListener('change', updateMapFeatures);
-            document.getElementById('show-countries').addEventListener('change', updateMapFeatures);
-            document.getElementById('show-states').addEventListener('change', updateMapFeatures);
             document.getElementById('bubble-scale').addEventListener('input', updateBubbleScale);
+            document.getElementById('show-labels').addEventListener('change', updateLabels);
+            document.getElementById('show-background').addEventListener('change', updateBackground);
         }
 
         // 更新3D相机视角
@@ -914,43 +924,55 @@
             Plotly.restyle('chart7-2-2', update);
         }
 
-        // 更新地图投影
-        function updateMapProjection() {
-            const projection = document.getElementById('map-projection').value;
-            const layoutUpdate = {
-                geo: {projection: {type: projection}}
-            };
-
-            Plotly.relayout('chart7-3', layoutUpdate);
-        }
-
-        // 更新地图要素显示
-        function updateMapFeatures() {
-            const showCoastlines = document.getElementById('show-coastlines').checked;
-            const showCountries = document.getElementById('show-countries').checked;
-            const showStates = document.getElementById('show-states').checked;
-
-            const layoutUpdate = {
-                geo: {
-                    showcoastlines: showCoastlines,
-                    showcountries: showCountries,
-                    showland: true
-                }
-            };
-
-            Plotly.relayout('chart7-3', layoutUpdate);
-        }
-
         // 更新气泡大小
         function updateBubbleScale() {
-            const scale = parseInt(document.getElementById('bubble-scale').value);
-            const sizes = chapter7ExactData.usCities.population.map(pop => pop / 100 * scale);
-
+            const scale = parseFloat(document.getElementById('bubble-scale').value);
+            document.getElementById('scale-value').textContent = scale.toFixed(1);
+            
+            const sizes = chapter7ExactData.usCities.population.map(pop => pop * scale);
+            
             const update = {
                 marker: {size: sizes}
             };
 
-            Plotly.restyle('chart7-3', update);
+            Plotly.restyle('chart7-3', update, 1); // 更新第二个trace（数据点）
+        }
+
+        // 重置地图视图
+        function resetMapView() {
+            document.getElementById('bubble-scale').value = 0.8;
+            document.getElementById('scale-value').textContent = '0.8';
+            document.getElementById('show-labels').checked = true;
+            document.getElementById('show-background').checked = true;
+            
+            updateBubbleScale();
+            
+            const layoutUpdate = {
+                xaxis: {range: [-125, -65]},
+                yaxis: {range: [25, 50]}
+            };
+            
+            Plotly.relayout('chart7-3', layoutUpdate);
+        }
+
+        // 显示/隐藏标签
+        function updateLabels() {
+            const showLabels = document.getElementById('show-labels').checked;
+            const update = {
+                mode: showLabels ? 'markers+text' : 'markers'
+            };
+            
+            Plotly.restyle('chart7-3', update, 1);
+        }
+
+        // 显示/隐藏背景
+        function updateBackground() {
+            const showBackground = document.getElementById('show-background').checked;
+            const update = {
+                visible: showBackground
+            };
+            
+            Plotly.restyle('chart7-3', update, 0);
         }
 
         // 更新闪烁模式
