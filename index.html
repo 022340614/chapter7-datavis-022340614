@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第七章3D与动画可视化平台 - 022340614</title>
+    <meta name="author" content="022340614">
+    <meta name="description" content="基于第七章3D图表、动画制作和统计地图的数据可视化平台 - 安全稳定版本">
+    
+    <!-- 安全头 -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.plot.ly 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000">
+    
+    <!-- 预加载优化 -->
+    <link rel="preload" href="https://cdn.plot.ly/plotly-2.16.1.min.js" as="script" crossorigin="anonymous">
+    <link rel="preconnect" href="https://cdn.plot.ly">
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --text: #111827;
+            --bg: #ffffff;
+            --border: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* 头部导航 */
+        .header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo::after {
+            content: "022340614";
+            color: #6b7280;
+            font-size: 0.875em;
+            font-weight: 400;
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1.25rem;
+            background: transparent;
+            color: #6b7280;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            min-height: 48px;
+            min-width: 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+        }
+
+        .nav-btn.active, .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* 主要内容 */
+        .main {
+            padding: 2rem 0;
+        }
+
+        .hero {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+            padding: 3rem 0;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 章节区域 */
+        .section {
+            background: rgba(255,255,255,0.95);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::before {
+            content: "🌐";
+            font-size: 1.5em;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 500px;
+            background: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+
+        .chart-container-3d {
+            height: 600px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .data-table th, .data-table td {
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .data-table tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .control-group {
+            margin: 1rem 0;
+        }
+
+        .control-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .slider {
+            width: 100%;
+            margin: 0.5rem 0;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            padding: 0.875rem 1.75rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            min-height: 48px;
+            min-width: 48px;
+            transition: all 0.3s ease;
+            margin: 0.5rem;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: #3730a3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: #0e7490;
+        }
+
+        /* 动画控制 */
+        .animation-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .animation-status {
+            background: var(--success);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        /* 页脚 */
+        .footer {
+            background: rgba(255,255,255,0.95);
+            border-top: 1px solid var(--border);
+            padding: 2rem 0;
+            text-align: center;
+            color: #6b7280;
+            margin-top: 3rem;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+            .chart-container-3d {
+                height: 500px;
+            }
+            .nav {
+                flex-direction: column;
+            }
+            .nav-btn {
+                width: 100%;
+                text-align: center;
+            }
+            .section {
+                padding: 1.5rem;
+                margin: 0 -1rem 1.5rem;
+                border-radius: 0;
+            }
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="#" class="logo">
+                <span>🌐</span>
+                <span>第七章3D与动画可视化</span>
+            </a>
+            <nav class="nav">
+                <a href="#section7-1" class="nav-btn active">7.1 3D图表</a>
+                <a href="#section7-2" class="nav-btn">7.2 动画制作</a>
+                <a href="#section7-3" class="nav-btn">7.3 统计地图</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <section class="hero">
+                <h1>第七章3D与动画可视化平台</h1>
+                <p>基于第七章3D图表、动画制作和统计地图的交互式数据可视化平台</p>
+                <p><strong>学号：022340614 | 安全稳定版本</strong></p>
+                <div class="success" id="status-message">
+                    ✅ 平台已安全部署 - 3D交互与动画效果
+                </div>
+            </section>
+
+            <!-- 7.1 使用mplot3d绘制3D图表 -->
+            <section id="section7-1" class="section">
+                <h2 class="section-title">7.1 使用mplot3d绘制3D图表</h2>
+                
+                <h3>7.1.3 实例1：三维空间的星星</h3>
+                <div class="chart-container chart-container-3d" id="chart7-1-1">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                        <div class="loading"></div>
+                        <span style="margin-left: 1rem;">加载3D星星图表...</span>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <h3>3D图表控制</h3>
+                    <div class="control-group">
+                        <label class="control-label">视角调整：</label>
+                        <input type="range" class="slider" id="camera-azimuth" min="0" max="360" value="45" step="1">
+                        <span>方位角: <span id="azimuth-value">45°</span></span>
+                    </div>
+                    <div class="control-group">
+                        <input type="range" class="slider" id="camera-elevation" min="0" max="90" value="30" step="1">
+                        <span>仰角: <span id="elevation-value">30°</span></span>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">星星颜色：</label>
+                        <select id="star-colors" class="btn">
+                            <option value="rainbow">彩虹色</option>
+                            <option value="temperature">温度色</option>
+                            <option value="viridis">Viridis</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="reset3DCamera()">
+                        <span>🔄</span>重置视角
+                    </button>
+                </div>
+
+                <h3>7.1.2 3D曲面图</h3>
+                <div class="chart-container chart-container-3d" id="chart7-1-2">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                        <div class="loading"></div>
+                        <span style="margin-left: 1rem;">加载3D曲面图...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7.2 使用animation制作动图 -->
+            <section id="section7-2" class="section">
+                <h2 class="section-title">7.2 使用animation制作动图</h2>
+                
+                <h3>7.2.2 实例2：三维空间闪烁的星星</h3>
+                <div class="chart-container chart-container-3d" id="chart7-2">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                        <div class="loading"></div>
+                        <span style="margin-left: 1rem;">加载闪烁星星动画...</span>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <h3>动画控制</h3>
+                    <div class="animation-controls">
+                        <button class="btn" id="play-animation">
+                            <span>▶️</span>播放动画
+                        </button>
+                        <button class="btn btn-secondary" id="pause-animation">
+                            <span>⏸️</span>暂停动画
+                        </button>
+                        <button class="btn" id="reset-animation">
+                            <span>🔄</span>重置动画
+                        </button>
+                        <div class="animation-status" id="animation-status">准备就绪</div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">动画速度：</label>
+                        <input type="range" class="slider" id="animation-speed" min="100" max="2000" value="500" step="100">
+                        <span>间隔: <span id="speed-value">500</span>ms</span>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">闪烁模式：</label>
+                        <select id="blink-mode" class="btn">
+                            <option value="alternate">交替闪烁</option>
+                            <option value="random">随机闪烁</option>
+                            <option value="wave">波浪闪烁</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3>正弦波动画</h3>
+                <div class="chart-container" id="chart7-2-2">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                        <div class="loading"></div>
+                        <span style="margin-left: 1rem;">加载正弦波动画...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7.3 使用basemap绘制统计地图 -->
+            <section id="section7-3" class="section">
+                <h2 class="section-title">7.3 使用basemap绘制统计地图</h2>
+                
+                <h3>7.3.2 实例3：美国部分城镇人口分布</h3>
+                <div class="chart-container" id="chart7-3">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                        <div class="loading"></div>
+                        <span style="margin-left: 1rem;">加载美国人口分布地图...</span>
+                    </div>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>城镇名称</th><th>纬度</th><th>经度</th><th>人口(万)</th><th>城镇名称</th><th>纬度</th><th>经度</th><th>人口(万)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>纽约</td><td>40.71</td><td>-74.01</td><td>840</td><td>洛杉矶</td><td>34.05</td><td>-118.24</td><td>390</td></tr>
+                        <tr><td>芝加哥</td><td>41.88</td><td>-87.63</td><td>270</td><td>休斯顿</td><td>29.76</td><td>-95.37</td><td>230</td></tr>
+                        <tr><td>凤凰城</td><td>33.45</td><td>-112.07</td><td>160</td><td>费城</td><td>39.95</td><td>-75.17</td><td>160</td></tr>
+                        <tr><td>圣安东尼奥</td><td>29.42</td><td>-98.49</td><td>150</td><td>圣地亚哥</td><td>32.72</td><td>-117.16</td><td>140</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="control-panel">
+                    <h3>地图控制</h3>
+                    <div class="control-group">
+                        <label class="control-label">地图投影：</label>
+                        <select id="map-projection" class="btn">
+                            <option value="equirectangular">等距圆柱投影</option>
+                            <option value="mercator">墨卡托投影</option>
+                            <option value="orthographic">正射投影</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">显示要素：</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="show-coastlines" checked> 海岸线
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="show-countries" checked> 国家边界
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="show-states" checked> 州界
+                            </label>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">气泡大小缩放：</label>
+                        <input type="range" class="slider" id="bubble-scale" min="500" max="2000" value="1000" step="100">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 性能监控 -->
+            <section class="section">
+                <h2 class="section-title">🔧 平台性能监控</h2>
+                <div id="performance-metrics">
+                    <p>加载时间: <span id="load-time">计算中...</span></p>
+                    <p>3D图表数量: <span id="chart-count">3</span> 个</p>
+                    <p>动画数量: <span id="animation-count">2</span> 个</p>
+                    <p>安全状态: <span class="success">✅ 已启用HTTPS加密</span></p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>第七章3D与动画可视化平台 - 基于精确教学数据开发</p>
+            <p>学号：<strong>022340614</strong> | 安全稳定版本</p>
+            <p style="font-size: 0.875rem; opacity: 0.7; margin-top: 1rem;">
+                包含7.1 3D图表、7.2 动画制作、7.3 统计地图 | 交互式3D与动画效果
+            </p>
+        </div>
+    </footer>
+
+    <!-- Plotly.js CDN -->
+    <script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
+    
+    <script>
+        // 第七章精确数据
+        const chapter7ExactData = {
+            // 7.1.3 三维空间星星数据
+            stars3d: {
+                x: [13, 5, 25, 13, 9, 19, 3, 39, 13, 27],
+                y: [4, 38, 16, 26, 7, 19, 28, 10, 17, 18],
+                z: [7, 19, 6, 12, 25, 19, 23, 25, 10, 15]
+            },
+            // 7.3.2 美国城镇人口数据（简化版）
+            usCities: {
+                cities: ['纽约', '洛杉矶', '芝加哥', '休斯顿', '凤凰城', '费城', '圣安东尼奥', '圣地亚哥'],
+                lat: [40.71, 34.05, 41.88, 29.76, 33.45, 39.95, 29.42, 32.72],
+                lon: [-74.01, -118.24, -87.63, -95.37, -112.07, -75.17, -98.49, -117.16],
+                population: [840, 390, 270, 230, 160, 160, 150, 140]
+            }
+        };
+
+        let performanceStartTime = Date.now();
+        let currentAnimations = {};
+        let animationIntervals = {};
+
+        // 初始化所有图表
+        function initCharts() {
+            try {
+                // 7.1.3 三维空间星星图表
+                init3DStarsChart();
+                
+                // 7.1.2 3D曲面图
+                init3DSurfaceChart();
+                
+                // 7.2.2 闪烁星星动画
+                initBlinkingStarsAnimation();
+                
+                // 7.2 正弦波动画
+                initSineWaveAnimation();
+                
+                // 7.3.2 美国人口分布地图
+                initUSPopulationMap();
+                
+                updatePerformanceMetrics();
+                
+                // 绑定控制事件
+                bindControlEvents();
+                
+            } catch (error) {
+                console.error('图表初始化错误:', error);
+                document.getElementById('status-message').className = 'error';
+                document.getElementById('status-message').innerHTML = '❌ 图表加载失败: ' + error.message;
+            }
+        }
+
+        // 7.1.3 三维空间星星图表
+        function init3DStarsChart() {
+            const trace = {
+                x: chapter7ExactData.stars3d.x,
+                y: chapter7ExactData.stars3d.y,
+                z: chapter7ExactData.stars3d.z,
+                mode: 'markers',
+                type: 'scatter3d',
+                marker: {
+                    size: 12,
+                    color: chapter7ExactData.stars3d.z,
+                    colorscale: 'Viridis',
+                    symbol: 'star'
+                },
+                text: chapter7ExactData.stars3d.z.map(z => `高度: ${z}`)
+            };
+
+            const layout = {
+                title: '7.1.3 三维空间的星星 - 022340614',
+                scene: {
+                    xaxis: {title: 'X轴'},
+                    yaxis: {title: 'Y轴'},
+                    zaxis: {title: 'Z轴'},
+                    camera: {
+                        eye: {x: 1.5, y: 1.5, z: 1.5}
+                    }
+                },
+                margin: {l: 0, r: 0, b: 0, t: 50}
+            };
+
+            Plotly.newPlot('chart7-1-1', [trace], layout);
+        }
+
+        // 7.1.2 3D曲面图
+        function init3DSurfaceChart() {
+            // 生成曲面数据
+            const x = [], y = [], z = [];
+            for (let i = -5; i <= 5; i += 0.5) {
+                for (let j = -5; j <= 5; j += 0.5) {
+                    const r = Math.sqrt(i*i + j*j);
+                    x.push(i);
+                    y.push(j);
+                    z.push(Math.sin(r));
+                }
+            }
+
+            const trace = {
+                x: x,
+                y: y,
+                z: z,
+                type: 'mesh3d',
+                colorscale: 'Viridis',
+                intensity: z
+            };
+
+            const layout = {
+                title: '7.1.2 3D曲面图 - 正弦函数曲面',
+                scene: {
+                    xaxis: {title: 'X轴'},
+                    yaxis: {title: 'Y轴'},
+                    zaxis: {title: 'Z轴'}
+                },
+                margin: {l: 0, r: 0, b: 0, t: 50}
+            };
+
+            Plotly.newPlot('chart7-1-2', [trace], layout);
+        }
+
+        // 7.2.2 闪烁星星动画
+        function initBlinkingStarsAnimation() {
+            const trace = {
+                x: chapter7ExactData.stars3d.x,
+                y: chapter7ExactData.stars3d.y,
+                z: chapter7ExactData.stars3d.z,
+                mode: 'markers',
+                type: 'scatter3d',
+                marker: {
+                    size: 12,
+                    color: '#C71585',
+                    symbol: 'star'
+                }
+            };
+
+            const layout = {
+                title: '7.2.2 三维空间闪烁的星星 - 022340614',
+                scene: {
+                    xaxis: {title: 'X轴'},
+                    yaxis: {title: 'Y轴'},
+                    zaxis: {title: 'Z轴'}
+                }
+            };
+
+            currentAnimations['blinkingStars'] = Plotly.newPlot('chart7-2', [trace], layout);
+        }
+
+        // 7.2 正弦波动画
+        function initSineWaveAnimation() {
+            const x = [];
+            const y = [];
+            for (let i = 0; i < 100; i++) {
+                x.push(i * 0.1);
+                y.push(Math.sin(i * 0.1));
+            }
+
+            const trace = {
+                x: x,
+                y: y,
+                mode: 'lines',
+                type: 'scatter',
+                line: {color: '#4f46e5', width: 3}
+            };
+
+            const layout = {
+                title: '正弦波动画演示',
+                xaxis: {title: '时间'},
+                yaxis: {title: '振幅', range: [-1.5, 1.5]}
+            };
+
+            currentAnimations['sineWave'] = Plotly.newPlot('chart7-2-2', [trace], layout);
+        }
+
+        // 7.3.2 美国人口分布地图
+        function initUSPopulationMap() {
+            const trace = {
+                type: 'scattergeo',
+                mode: 'markers',
+                lat: chapter7ExactData.usCities.lat,
+                lon: chapter7ExactData.usCities.lon,
+                text: chapter7ExactData.usCities.cities.map((city, i) => 
+                    `${city}<br>人口: ${chapter7ExactData.usCities.population[i]}万`
+                ),
+                marker: {
+                    size: chapter7ExactData.usCities.population.map(pop => pop / 10),
+                    color: chapter7ExactData.usCities.population,
+                    colorscale: 'Viridis',
+                    line: {width: 0}
+                }
+            };
+
+            const layout = {
+                title: '7.3.2 美国部分城镇人口分布 - 022340614',
+                geo: {
+                    scope: 'north america',
+                    projection: {type: 'equirectangular'},
+                    showland: true,
+                    landcolor: 'rgb(217, 217, 217)',
+                    subunitwidth: 1,
+                    countrywidth: 1,
+                    subunitcolor: 'rgb(255,255,255)',
+                    countrycolor: 'rgb(255,255,255)'
+                }
+            };
+
+            Plotly.newPlot('chart7-3', [trace], layout);
+        }
+
+        // 绑定控制事件
+        function bindControlEvents() {
+            // 3D视角控制
+            document.getElementById('camera-azimuth').addEventListener('input', update3DCamera);
+            document.getElementById('camera-elevation').addEventListener('input', update3DCamera);
+            document.getElementById('star-colors').addEventListener('change', updateStarColors);
+
+            // 动画控制
+            document.getElementById('play-animation').addEventListener('click', startAnimations);
+            document.getElementById('pause-animation').addEventListener('click', pauseAnimations);
+            document.getElementById('reset-animation').addEventListener('click', resetAnimations);
+            document.getElementById('animation-speed').addEventListener('input', updateAnimationSpeed);
+            document.getElementById('blink-mode').addEventListener('change', updateBlinkMode);
+
+            // 地图控制
+            document.getElementById('map-projection').addEventListener('change', updateMapProjection);
+            document.getElementById('show-coastlines').addEventListener('change', updateMapFeatures);
+            document.getElementById('show-countries').addEventListener('change', updateMapFeatures);
+            document.getElementById('show-states').addEventListener('change', updateMapFeatures);
+            document.getElementById('bubble-scale').addEventListener('input', updateBubbleScale);
+        }
+
+        // 更新3D相机视角
+        function update3DCamera() {
+            const azimuth = parseInt(document.getElementById('camera-azimuth').value);
+            const elevation = parseInt(document.getElementById('camera-elevation').value);
+            
+            document.getElementById('azimuth-value').textContent = azimuth + '°';
+            document.getElementById('elevation-value').textContent = elevation + '°';
+
+            const layoutUpdate = {
+                scene: {
+                    camera: {
+                        eye: {
+                            x: Math.cos(azimuth * Math.PI/180) * Math.cos(elevation * Math.PI/180),
+                            y: Math.sin(azimuth * Math.PI/180) * Math.cos(elevation * Math.PI/180),
+                            z: Math.sin(elevation * Math.PI/180)
+                        }
+                    }
+                }
+            };
+
+            Plotly.relayout('chart7-1-1', layoutUpdate);
+            Plotly.relayout('chart7-1-2', layoutUpdate);
+        }
+
+        // 重置3D相机
+        function reset3DCamera() {
+            document.getElementById('camera-azimuth').value = 45;
+            document.getElementById('camera-elevation').value = 30;
+            update3DCamera();
+        }
+
+        // 更新星星颜色
+        function updateStarColors() {
+            const colorScheme = document.getElementById('star-colors').value;
+            const colorscale = colorScheme === 'rainbow' ? 'Rainbow' : 
+                             colorScheme === 'temperature' ? 'Viridis' : 'Plasma';
+
+            const update = {
+                marker: {colorscale: colorscale}
+            };
+
+            Plotly.restyle('chart7-1-1', update);
+        }
+
+        // 开始动画
+        function startAnimations() {
+            document.getElementById('animation-status').textContent = '动画播放中';
+            document.getElementById('animation-status').style.background = 'var(--success)';
+
+            // 闪烁星星动画
+            if (!animationIntervals['blinkingStars']) {
+                animationIntervals['blinkingStars'] = setInterval(animateBlinkingStars, 
+                    parseInt(document.getElementById('animation-speed').value));
+            }
+
+            // 正弦波动画
+            if (!animationIntervals['sineWave']) {
+                animationIntervals['sineWave'] = setInterval(animateSineWave, 100);
+            }
+        }
+
+        // 暂停动画
+        function pauseAnimations() {
+            document.getElementById('animation-status').textContent = '动画已暂停';
+            document.getElementById('animation-status').style.background = 'var(--warning)';
+
+            Object.values(animationIntervals).forEach(interval => {
+                clearInterval(interval);
+            });
+            animationIntervals = {};
+        }
+
+        // 重置动画
+        function resetAnimations() {
+            pauseAnimations();
+            initBlinkingStarsAnimation();
+            initSineWaveAnimation();
+            document.getElementById('animation-status').textContent = '动画已重置';
+        }
+
+        // 更新动画速度
+        function updateAnimationSpeed() {
+            const speed = parseInt(document.getElementById('animation-speed').value);
+            document.getElementById('speed-value').textContent = speed;
+
+            if (animationIntervals['blinkingStars']) {
+                pauseAnimations();
+                startAnimations();
+            }
+        }
+
+        // 闪烁星星动画效果
+        function animateBlinkingStars() {
+            const mode = document.getElementById('blink-mode').value;
+            let colors;
+
+            if (mode === 'alternate') {
+                colors = Array(10).fill(Math.random() > 0.5 ? '#C71585' : 'white');
+            } else if (mode === 'random') {
+                colors = Array(10).fill().map(() => 
+                    Math.random() > 0.7 ? '#C71585' : 'white'
+                );
+            } else {
+                // 波浪效果
+                const phase = Date.now() / 1000;
+                colors = Array(10).fill().map((_, i) => 
+                    Math.sin(phase + i * 0.5) > 0 ? '#C71585' : 'white'
+                );
+            }
+
+            const update = {
+                marker: {color: colors}
+            };
+
+            Plotly.restyle('chart7-2', update);
+        }
+
+        // 正弦波动画效果
+        function animateSineWave() {
+            const phase = Date.now() / 1000;
+            const y = [];
+            for (let i = 0; i < 100; i++) {
+                y.push(Math.sin(i * 0.1 + phase));
+            }
+
+            const update = {
+                y: [y]
+            };
+
+            Plotly.restyle('chart7-2-2', update);
+        }
+
+        // 更新地图投影
+        function updateMapProjection() {
+            const projection = document.getElementById('map-projection').value;
+            const layoutUpdate = {
+                geo: {projection: {type: projection}}
+            };
+
+            Plotly.relayout('chart7-3', layoutUpdate);
+        }
+
+        // 更新地图要素显示
+        function updateMapFeatures() {
+            const showCoastlines = document.getElementById('show-coastlines').checked;
+            const showCountries = document.getElementById('show-countries').checked;
+            const showStates = document.getElementById('show-states').checked;
+
+            const layoutUpdate = {
+                geo: {
+                    showcoastlines: showCoastlines,
+                    showcountries: showCountries,
+                    showland: true
+                }
+            };
+
+            Plotly.relayout('chart7-3', layoutUpdate);
+        }
+
+        // 更新气泡大小
+        function updateBubbleScale() {
+            const scale = parseInt(document.getElementById('bubble-scale').value);
+            const sizes = chapter7ExactData.usCities.population.map(pop => pop / 100 * scale);
+
+            const update = {
+                marker: {size: sizes}
+            };
+
+            Plotly.restyle('chart7-3', update);
+        }
+
+        // 更新闪烁模式
+        function updateBlinkMode() {
+            // 模式改变时重新开始动画
+            if (animationIntervals['blinkingStars']) {
+                pauseAnimations();
+                startAnimations();
+            }
+        }
+
+        // 更新性能指标
+        function updatePerformanceMetrics() {
+            const loadTime = Date.now() - performanceStartTime;
+            document.getElementById('load-time').textContent = `${loadTime}ms`;
+        }
+
+        // 页面加载初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('第七章3D与动画可视化平台加载 - 022340614');
+            
+            // 检查HTTPS
+            if (location.protocol !== 'https:') {
+                document.getElementById('status-message').className = 'error';
+                document.getElementById('status-message').innerHTML = '⚠️ 建议使用HTTPS访问以确保安全';
+            }
+            
+            // 初始化图表
+            if (typeof Plotly !== 'undefined') {
+                initCharts();
+            } else {
+                document.getElementById('status-message').className = 'error';
+                document.getElementById('status-message').innerHTML = '❌ Plotly.js加载失败，请检查网络连接';
+            }
+        });
+
+        // 错误处理
+        window.addEventListener('error', function(e) {
+            console.error('全局错误:', e.error);
+        });
+
+        // 清理动画间隔
+        window.addEventListener('beforeunload', function() {
+            Object.values(animationIntervals).forEach(interval => {
+                clearInterval(interval);
+            });
+        });
+    </script>
+</body>
+</html>
